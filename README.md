@@ -10,7 +10,7 @@
 
 **Modern React frontend for the Orlim limit order management system on Sui**
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen?style=flat-square)](https://orlim.dev)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen?style=flat-square)](https://orlim.netlify.app/)
 [![Contract](https://img.shields.io/badge/Contract-v1.0.0-orange?style=flat-square)](https://github.com/bernieio/orlim-contract)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](#license)
 
@@ -223,8 +223,8 @@ interface WalletService {
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/bernieio/orlim-contract.git
-cd orlim-contract/frontend
+git clone https://github.com/bernieio/orlim.git
+cd orlim
 ```
 
 2. **Install dependencies**
@@ -257,8 +257,8 @@ Navigate to `http://localhost:5173`
 
 ```env
 # Sui Network Configuration
-VITE_SUI_NETWORK=mainnet
-VITE_SUI_RPC_URL=https://fullnode.mainnet.sui.io
+VITE_SUI_NETWORK=testnet
+VITE_SUI_RPC_URL=https://fullnode.testnet.sui.io
 
 # Contract Configuration
 VITE_ORLIM_PACKAGE_ID=0x...
@@ -545,17 +545,17 @@ At DevPros Team, we are committed to:
 - 💬 **Telegram**: [@bernieio](https://t.me/bernieio)
 - 🐦 **Twitter**: [@bernie_io](https://twitter.com/bernie_io)
 - 📧 **Email**: bernie.web3@gmail.com
-- 🐛 **Issues**: [GitHub Issues](https://github.com/bernieio/orlim-contract/issues)
-- 📖 **Documentation**: [Orlim Docs](https://docs.orlim.dev)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/bernieio/orlim/issues)
+<!-- - 📖 **Documentation**: [Orlim Docs](https://docs.orlim.dev) -->
 
 ---
 
 ## 🔗 Related Projects
 
 - **📦 Smart Contract**: [orlim-contract](https://github.com/bernieio/orlim-contract)
-- **📚 Documentation**: [Orlim Documentation](https://docs.orlim.dev)
-- **🌐 Live Demo**: [orlim.dev](https://orlim.dev)
-- **📊 Analytics**: [Orlim Analytics](https://analytics.orlim.dev)
+- **🌐 Live Demo**: [orlim.dev](https://orlim.netlify.app/)
+<!-- - **📚 Documentation**: [Orlim Documentation](https://docs.orlim.dev) -->
+<!-- - **📊 Analytics**: [Orlim Analytics](https://analytics.orlim.dev) -->
 
 ---
 
