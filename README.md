@@ -289,10 +289,12 @@ Navigate to `http://localhost:5173`
 ### ⚙️ Environment Variables
 
 **Required:**
-- `VITE_COINGECKO_API_KEY`: CoinGecko API key for real-time SUI price data
+- `COINGECKO_API_KEY`: CoinGecko API key for real-time SUI price data
+  - Alternative: `VITE_COINGECKO_API_KEY` (with prefix for Vite compatibility)
 
 **Optional:**
-- `VITE_DEFAULT_SUI_PRICE`: Fallback price if API fails (default: 2.0)
+- `DEFAULT_SUI_PRICE`: Fallback price if API fails (default: 2.0)
+  - Alternative: `VITE_DEFAULT_SUI_PRICE` (with prefix for Vite compatibility)
 - `VITE_DEEPBOOK_INDEXER_API`: DeepBook Indexer API URL
 
 📖 **See [README_ENV.md](./README_ENV.md) for complete environment variable documentation**

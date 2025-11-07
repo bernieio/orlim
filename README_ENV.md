@@ -11,8 +11,10 @@ This project uses environment variables for configuration. Follow these steps to
 
 2. **Edit `.env.local` and add your API keys:**
    ```env
-   VITE_COINGECKO_API_KEY=your_actual_api_key_here
+   COINGECKO_API_KEY=your_actual_api_key_here
    ```
+   
+   **Note:** If you're using Vite, you can also use `VITE_COINGECKO_API_KEY` (with prefix) for compatibility. The config will automatically detect either format.
 
 3. **Restart the dev server** if it's running:
    ```bash
@@ -23,10 +25,11 @@ This project uses environment variables for configuration. Follow these steps to
 
 ### Required Variables
 
-- `VITE_COINGECKO_API_KEY`: Your CoinGecko API key
+- `COINGECKO_API_KEY`: Your CoinGecko API key
   - Get it from: https://www.coingecko.com/en/api
   - Free tier: 10-50 calls/minute
   - Example: `CG-t9oeaaQZkxzjLHMDidfReygB`
+  - **Alternative:** You can also use `VITE_COINGECKO_API_KEY` (with VITE_ prefix) for Vite compatibility
 
 ### Optional Variables
 
@@ -34,9 +37,10 @@ This project uses environment variables for configuration. Follow these steps to
   - Default: `https://deepbook-indexer.testnet.mystenlabs.com`
   - Only change if using a different endpoint
 
-- `VITE_DEFAULT_SUI_PRICE`: Fallback SUI price if API fails
+- `DEFAULT_SUI_PRICE`: Fallback SUI price if API fails
   - Default: `2.0`
   - Used when CoinGecko API is unavailable
+  - **Alternative:** You can also use `VITE_DEFAULT_SUI_PRICE` (with VITE_ prefix) for Vite compatibility
 
 ## File Structure
 
@@ -50,16 +54,22 @@ This project uses environment variables for configuration. Follow these steps to
 
 The `.env.local` file contains sensitive API keys and is already in `.gitignore`. Always use `.env.example` as a template for documentation.
 
-## Vite Environment Variables
+## Environment Variable Naming
 
-All environment variables must be prefixed with `VITE_` to be exposed to the client-side code. This is a Vite requirement.
+The project uses a config file (`src/config/coingecko.ts`) that automatically detects environment variables with or without the `VITE_` prefix:
+
+- **Preferred:** `COINGECKO_API_KEY` (without prefix)
+- **Alternative:** `VITE_COINGECKO_API_KEY` (with prefix, for Vite compatibility)
+
+**Note:** If you're using Vite and want to expose variables to client-side, you still need the `VITE_` prefix in your `.env` file. However, the config file abstracts this complexity and supports both formats.
 
 ## Troubleshooting
 
 If environment variables aren't working:
 
-1. Make sure the variable name starts with `VITE_`
-2. Restart the dev server after changing `.env.local`
-3. Check that `.env.local` is in the `frontend/` directory
-4. Verify the variable is being read: `console.log(import.meta.env.VITE_COINGECKO_API_KEY)`
+1. **For Vite:** Use `VITE_COINGECKO_API_KEY` in your `.env.local` file
+2. **For other build tools:** Use `COINGECKO_API_KEY` (the config will detect it)
+3. Restart the dev server after changing `.env.local`
+4. Check that `.env.local` is in the `frontend/` directory
+5. Verify the variable is being read: Check the browser console or use `console.log(import.meta.env.COINGECKO_API_KEY)` or `console.log(import.meta.env.VITE_COINGECKO_API_KEY)`
 
