@@ -127,7 +127,7 @@ export function OrderForm() {
             </Badge>
             {!priceLoading && (
               <small className="text-muted ms-2">
-                (updates every 10s)
+                (updates every 20s)
               </small>
             )}
           </>

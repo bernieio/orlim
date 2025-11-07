@@ -67,10 +67,10 @@ export function useSuiPrice() {
     // Fetch ngay lập tức (initial load)
     fetchPrice(true);
 
-    // Poll mỗi 10 giây để cập nhật giá thường xuyên
+    // Poll mỗi 20 giây để cập nhật giá
     // CoinGecko public API: 10-50 calls/phút (rate limit)
-    // 10 giây = 6 calls/phút → an toàn với rate limit, vẫn update thường xuyên
-    const POLL_INTERVAL = 10000; // 10 seconds - update thường xuyên hơn
+    // 20 giây = 3 calls/phút → an toàn với rate limit
+    const POLL_INTERVAL = 20000; // 20 seconds
 
     const interval = setInterval(() => {
       fetchPrice(false);
