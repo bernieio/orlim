@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react';
-import { COINGECKO_API, DEFAULT_SUI_PRICE } from '../config/coingecko';
+
+// CoinGecko API configuration from environment variables
+const COINGECKO_API_KEY = import.meta.env.VITE_COINGECKO_API_KEY || '';
+const DEFAULT_SUI_PRICE = parseFloat(import.meta.env.VITE_DEFAULT_SUI_PRICE || '2.0');
+
+// Build API URL with API key if provided
+const getCoinGeckoApiUrl = () => {
+  const baseUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd';
+  if (COINGECKO_API_KEY) {
+    return `${baseUrl}&x_cg_demo_api_key=${COINGECKO_API_KEY}`;
+  }
+  return baseUrl;
+};
+
+const COINGECKO_API = getCoinGeckoApiUrl();
 
 export function useSuiPrice() {
   const [price, setPrice] = useState<number>(DEFAULT_SUI_PRICE); // Fallback from env or $2
