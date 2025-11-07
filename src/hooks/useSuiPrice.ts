@@ -1,19 +1,8 @@
 import { useState, useEffect } from 'react';
 
-// CoinGecko API configuration from environment variables
-const COINGECKO_API_KEY = import.meta.env.VITE_COINGECKO_API_KEY || '';
+// CoinGecko Public API (no API key required)
+const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd';
 const DEFAULT_SUI_PRICE = parseFloat(import.meta.env.VITE_DEFAULT_SUI_PRICE || '2.0');
-
-// Build API URL with API key if provided
-const getCoinGeckoApiUrl = () => {
-  const baseUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd';
-  if (COINGECKO_API_KEY) {
-    return `${baseUrl}&x_cg_demo_api_key=${COINGECKO_API_KEY}`;
-  }
-  return baseUrl;
-};
-
-const COINGECKO_API = getCoinGeckoApiUrl();
 
 export function useSuiPrice() {
   const [price, setPrice] = useState<number>(DEFAULT_SUI_PRICE); // Fallback from env or $2
@@ -79,7 +68,7 @@ export function useSuiPrice() {
     fetchPrice(true);
 
     // Poll mỗi 10 giây để cập nhật giá thường xuyên
-    // CoinGecko free tier: 10-50 calls/phút (với API key có thể cao hơn)
+    // CoinGecko public API: 10-50 calls/phút (rate limit)
     // 10 giây = 6 calls/phút → an toàn với rate limit, vẫn update thường xuyên
     const POLL_INTERVAL = 10000; // 10 seconds - update thường xuyên hơn
 

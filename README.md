@@ -239,7 +239,7 @@ yarn install
 # Copy environment template
 cp .env.example .env.local
 
-# Edit environment variables (add your CoinGecko API key)
+# Edit environment variables (optional)
 nano .env.local
 ```
 
@@ -257,14 +257,11 @@ Navigate to `http://localhost:5173`
 
 ### ⚙️ Environment Variables
 
-**Required:**
-- `VITE_COINGECKO_API_KEY`: CoinGecko API key for real-time SUI price data
-
 **Optional:**
-- `VITE_DEFAULT_SUI_PRICE`: Fallback price if API fails (default: 2.0)
+- `VITE_DEFAULT_SUI_PRICE`: Fallback price if CoinGecko API fails (default: 2.0)
 - `VITE_DEEPBOOK_INDEXER_API`: DeepBook Indexer API URL
 
-📖 **See [README_ENV.md](./README_ENV.md) for complete environment variable documentation**
+**Note:** CoinGecko price feed uses the public API endpoint (no API key required).
 
 ---
 
