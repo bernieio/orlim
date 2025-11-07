@@ -63,20 +63,45 @@ export class DeepBookService {
    * Get Full Order Book (Bids + Asks)
    */
   async getFullOrderBook(poolKey: string): Promise<OrderBookData> {
-    // Get best bid and ask to determine range
-    const midPrice = 2.0; // Default mid price - can be fetched from market data
-    const range = midPrice * 0.1; // ±10% range
-    
-    const [bids, asks] = await Promise.all([
-      this.getOrderBook(poolKey, midPrice - range, midPrice, true),
-      this.getOrderBook(poolKey, midPrice, midPrice + range, false),
-    ]);
+    try {
+      // Try to get actual market data with a wider range
+      // Default to a reasonable range based on typical prices
+      const defaultMidPrice = 2.0;
+      const range = defaultMidPrice * 0.2; // ±20% range for better coverage
+      
+      const [bids, asks] = await Promise.all([
+        this.getOrderBook(poolKey, Math.max(0, defaultMidPrice - range), defaultMidPrice, true),
+        this.getOrderBook(poolKey, defaultMidPrice, defaultMidPrice + range, false),
+      ]);
 
-    return {
-      bids: bids.reverse(), // Highest bid first
-      asks, // Lowest ask first
-      midPrice,
-    };
+      // Calculate actual mid price from best bid and ask if available
+      let midPrice = defaultMidPrice;
+      if (bids.length > 0 && asks.length > 0) {
+        const bestBid = bids[bids.length - 1]?.price || 0; // Highest bid (last after reverse)
+        const bestAsk = asks[0]?.price || 0; // Lowest ask (first)
+        if (bestBid > 0 && bestAsk > 0) {
+          midPrice = (bestBid + bestAsk) / 2;
+        }
+      } else if (bids.length > 0) {
+        midPrice = bids[bids.length - 1]?.price || defaultMidPrice;
+      } else if (asks.length > 0) {
+        midPrice = asks[0]?.price || defaultMidPrice;
+      }
+
+      return {
+        bids: bids.reverse(), // Highest bid first
+        asks, // Lowest ask first
+        midPrice,
+      };
+    } catch (error) {
+      console.error('Error fetching full order book:', error);
+      // Return empty order book on error
+      return {
+        bids: [],
+        asks: [],
+        midPrice: 2.0,
+      };
+    }
   }
 
   /**

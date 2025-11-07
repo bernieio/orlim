@@ -28,7 +28,7 @@ export function useOrderManager() {
   const orderManagerId = orderManager?.data?.objectId;
 
   // Get active orders from OrderManager
-  const { data: activeOrdersData } = useSuiClientQuery(
+  const { data: activeOrdersData, refetch: refetchActiveOrders } = useSuiClientQuery(
     'getObject',
     {
       id: orderManagerId || '',
@@ -57,11 +57,21 @@ export function useOrderManager() {
       }
     : null;
 
+  // Refetch both queries
+  const refetchAll = async () => {
+    await Promise.all([
+      refetch(),
+      refetchActiveOrders(),
+    ]);
+  };
+
   return {
     orderManagerId,
     orderManager: orderManagerDetails,
     activeOrders,
-    refetch,
+    refetch: refetchAll,
+    refetchOrderManager: refetch,
+    refetchActiveOrders,
   };
 }
 

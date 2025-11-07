@@ -47,7 +47,9 @@ Orlim brings **advanced trading tools to Sui** that are currently missing compar
 |---------|------------------|-------------------|-----------------|
 | **DEX Aggregator** | ✅ Jupiter (62.69% share) | ✅ PancakeSwap | 🚀 **Coming Soon** |
 | **Limit Orders** | ✅ Advanced | ✅ Multiple DEXs | ✅ **Orlim (Available)** |
+| **Multi-Pair Trading** | ✅ Supported | ✅ Supported | ✅ **3 Pairs (Extensible)** |
 | **Batch Operations** | ✅ Supported | ✅ Supported | ✅ **PTB-Optimized** |
+| **Real-Time Price Feeds** | ✅ Multiple Sources | ✅ Multiple Sources | ✅ **CoinGecko Integration** |
 | **User Experience** | ✅ Excellent | ✅ Good | ✅ **Modern & Fast** |
 
 ---
@@ -60,6 +62,8 @@ Orlim brings **advanced trading tools to Sui** that are currently missing compar
   - Place, track, and manage limit orders with precision
   - Real-time order status updates (active/filled/cancelled)
   - Gas-efficient operations (66% savings vs traditional)
+  - **Multi-Pair Trading**: Support for multiple trading pairs (SUI/DBUSDC, WAL/SUI, DEEP/SUI)
+  - **Trading Parameter Validation**: Automatic validation of min_size, lot_size, and tick_size per pair
 
 - **🔄 Batch Operations via PTBs**
   - Cancel multiple orders in a single transaction
@@ -67,12 +71,15 @@ Orlim brings **advanced trading tools to Sui** that are currently missing compar
   - Safe error handling (partial success support)
 
 - **📈 DeepBook V3 Integration**
-  - Real-time order book display
+  - Real-time order book display for all supported pairs
   - Live price charts and market depth
   - Liquidity analysis tools
+  - Dynamic order book updates based on selected trading pair
 
 - **💼 Professional Trading Interface**
   - Advanced order forms with price/quantity validation
+  - **Trading Sidebar**: Binance-style pair tabs with volume/price preview
+  - Dynamic UI that adapts to selected trading pair
   - Portfolio overview and P&L tracking
   - Order history and analytics
 
@@ -82,11 +89,20 @@ Orlim brings **advanced trading tools to Sui** that are currently missing compar
   - Responsive design for desktop and mobile
   - Dark/light theme toggle
   - Smooth animations and micro-interactions
+  - **Trading Sidebar**: Quick pair switching with live price/volume preview
+  - **Dynamic Labels**: UI automatically adapts to selected trading pair
 
 - **🔐 Secure Wallet Integration**
-  - Support for Sui Wallet, Suiet, and other compatible wallets
+  - Support for Sui Wallet, Suiet, and Slush Wallet
   - Multi-wallet management
   - Transaction signing with clear fee estimates
+  - **Persistent Connection**: Wallet state persists across page reloads
+
+- **💰 Real-Time Price Feeds**
+  - **CoinGecko Integration**: Live SUI price updates every 10 seconds
+  - Automatic price refresh on tab/window focus
+  - Fallback to default price if API fails
+  - Price display for SUI-based trading pairs
 
 - **📱 Mobile-Optimized**
   - Progressive Web App (PWA) support
@@ -103,23 +119,38 @@ frontend/
 ├── public/                 # Static assets
 ├── src/
 │   ├── components/         # Reusable React components
-│   │   ├── common/        # UI components (Button, Modal, etc.)
-│   │   ├── forms/         # Order forms and inputs
-│   │   ├── charts/        # Trading charts and graphs
-│   │   └── layout/        # Layout components
-│   ├── pages/             # Page components
-│   │   ├── Dashboard/     # Main trading dashboard
-│   │   ├── Orders/        # Order management pages
-│   │   └── Settings/      # User settings
+│   │   ├── TradingSidebar.tsx      # Trading pairs sidebar with tabs
+│   │   ├── TradingPairsProvider.tsx # Context provider for pair management
+│   │   ├── OrderForm.tsx           # Dynamic order form (adapts to pair)
+│   │   ├── OrderBookView.tsx       # Dynamic order book (adapts to pair)
+│   │   ├── ActiveOrdersList.tsx    # User's active orders
+│   │   ├── WalletConnection.tsx    # Wallet connection component
+│   │   └── CreateOrderManager.tsx  # Order Manager creation
 │   ├── hooks/             # Custom React hooks
+│   │   ├── useTradingPairs.ts      # Trading pairs management hook
+│   │   ├── useDeepBook.ts          # DeepBook order book hook
+│   │   ├── useOrlimContract.ts     # Orlim contract interactions
+│   │   ├── useOrderManager.ts      # Order Manager queries
+│   │   └── useSuiPrice.ts          # CoinGecko price feed hook
 │   ├── services/          # API and blockchain services
+│   │   ├── deepbookService.ts      # DeepBook V3 integration
+│   │   ├── contractService.ts      # Contract transaction builders
+│   │   └── suiService.ts           # Sui client wrapper
 │   ├── utils/             # Utility functions
+│   │   ├── tradingValidation.ts   # Trading parameter validation
+│   │   └── packageVerifier.ts     # Contract package verification
+│   ├── constants/          # Constants and configuration
+│   │   ├── contracts.ts           # Contract addresses & trading pairs
+│   │   └── config.ts              # Network configuration
 │   ├── types/             # TypeScript type definitions
+│   │   └── orlim.ts               # Contract & trading pair types
 │   ├── styles/            # Global styles and themes
-│   └── App.tsx            # Main application component
+│   ├── App.tsx            # Main application component
+│   └── main.tsx           # Application entry point
 ├── package.json           # Dependencies and scripts
 ├── vite.config.ts         # Vite configuration
 ├── tsconfig.json          # TypeScript configuration
+├── .env.example           # Environment variables template
 └── README.md              # This file
 ```
 
@@ -187,10 +218,10 @@ interface WalletService {
 - **Vite 5+** for lightning-fast development and building
 
 ### 🎨 UI & Styling
-- **Tailwind CSS** for utility-first styling
-- **Headless UI** for accessible component primitives
-- **Framer Motion** for smooth animations and transitions
-- **Lucide React** for consistent iconography
+- **Bootstrap 5** for responsive grid and components
+- **React Bootstrap** for React component integration
+- **Custom CSS** for trading-specific styling
+- **Responsive Design** optimized for desktop and mobile
 
 ### 🔗 Blockchain Integration
 - **@mysten/dapp-kit** for Sui wallet integration
@@ -199,10 +230,10 @@ interface WalletService {
 - **Polymesh** for programmable transaction blocks
 
 ### 📊 Data & Charts
-- **Recharts** for responsive trading charts
-- **React Query** for server state management
-- **Zustand** for client state management
-- **date-fns** for date/time manipulation
+- **React Query** (@tanstack/react-query) for server state management
+- **React Context API** for trading pairs state management
+- **CoinGecko API** for real-time SUI price feeds
+- **DeepBook Indexer API** for pool information
 
 ### 🛠️ Development Tools
 - **ESLint** for code quality and consistency
@@ -239,9 +270,11 @@ yarn install
 # Copy environment template
 cp .env.example .env.local
 
-# Edit environment variables
+# Edit environment variables (add your CoinGecko API key)
 nano .env.local
 ```
+
+📖 **See [README_ENV.md](./README_ENV.md) for detailed environment variable setup**
 
 4. **Start development server**
 ```bash
@@ -255,22 +288,14 @@ Navigate to `http://localhost:5173`
 
 ### ⚙️ Environment Variables
 
-```env
-# Sui Network Configuration
-VITE_SUI_NETWORK=testnet
-VITE_SUI_RPC_URL=https://fullnode.testnet.sui.io
+**Required:**
+- `VITE_COINGECKO_API_KEY`: CoinGecko API key for real-time SUI price data
 
-# Contract Configuration
-VITE_ORLIM_PACKAGE_ID=0x...
-VITE_ORLIM_ADMIN_CAP_ID=0x...
+**Optional:**
+- `VITE_DEFAULT_SUI_PRICE`: Fallback price if API fails (default: 2.0)
+- `VITE_DEEPBOOK_INDEXER_API`: DeepBook Indexer API URL
 
-# DeepBook Configuration
-VITE_DEEPBOOK_PACKAGE_ID=0x...
-
-# Analytics (optional)
-VITE_GA_TRACKING_ID=...
-VITE_SENTRY_DSN=...
-```
+📖 **See [README_ENV.md](./README_ENV.md) for complete environment variable documentation**
 
 ---
 
@@ -284,13 +309,25 @@ VITE_SENTRY_DSN=...
 
 ### 📊 Placing Limit Orders
 
-1. **Select Trading Pair**: Choose your desired token pair
+1. **Select Trading Pair**: 
+   - Use the sidebar to switch between available pairs (SUI/DBUSDC, WAL/SUI, DEEP/SUI)
+   - View live price and volume preview for each pair
+   - The UI automatically adapts to the selected pair
+
 2. **Set Order Parameters**:
-   - **Price**: Your desired limit price
-   - **Quantity**: Amount to buy/sell
-   - **Order Type**: Limit order (future: market, stop-loss)
-3. **Review**: Check gas fees and order details
-4. **Execute**: Sign transaction with your wallet
+   - **Quantity**: Amount to buy/sell (validated against min_size and lot_size)
+   - **Price**: Your desired limit price (validated against tick_size)
+   - **Order Type**: Buy or Sell limit order
+   - **Auto-calculation**: Amount is automatically calculated from quantity × price
+   - For SUI-based pairs, real-time SUI price from CoinGecko is available
+
+3. **Validation**: 
+   - System automatically validates trading parameters per pair
+   - Clear error messages if validation fails
+   - Minimum quantity and price increments are enforced
+
+4. **Review**: Check gas fees and order details
+5. **Execute**: Sign transaction with your wallet
 
 ### 🔄 Managing Orders
 
@@ -461,19 +498,40 @@ function OrderBook({ poolId }: { poolId: string }) {
 }
 ```
 
+### 🔄 Multi-Pair Trading
+
+Trading pairs management with dynamic UI:
+
+```typescript
+// Trading pairs hook example
+import { useTradingPairs } from '@/hooks/useTradingPairs'
+
+function TradingInterface() {
+  const { selectedPair, activeTabs, selectPairByTabId } = useTradingPairs()
+
+  return (
+    <div>
+      <TradingSidebar />
+      <OrderForm /> {/* Automatically uses selectedPair */}
+      <OrderBookView /> {/* Automatically uses selectedPair.pool_id */}
+    </div>
+  )
+}
+```
+
 ### 🔄 PTB (Programmable Transaction Blocks)
 
 Batch operations using Sui's PTBs:
 
 ```typescript
 // Batch cancel example
-import { useBatchCancel } from '@/hooks/useBatchCancel'
+import { useOrlimContract } from '@/hooks/useOrlimContract'
 
 function BatchCancelButton({ orderIds }: { orderIds: string[] }) {
-  const { batchCancel, isLoading } = useBatchCancel()
+  const { batchCancelOrders, isLoading } = useOrlimContract(orderManagerId)
 
   const handleBatchCancel = async () => {
-    const result = await batchCancel(orderIds)
+    const result = await batchCancelOrders(orderIds)
     console.log('Batch cancel result:', result)
   }
 
@@ -482,6 +540,21 @@ function BatchCancelButton({ orderIds }: { orderIds: string[] }) {
       Cancel {orderIds.length} Orders (Save ~40% gas)
     </button>
   )
+}
+```
+
+### ✅ Trading Parameter Validation
+
+Automatic validation based on pair-specific parameters:
+
+```typescript
+// Validation example
+import { validateOrderParams } from '@/utils/tradingValidation'
+
+const validation = validateOrderParams(quantity, price, selectedPair)
+if (!validation.valid) {
+  // Display validation.errors to user
+  console.error('Validation failed:', validation.errors)
 }
 ```
 
@@ -519,10 +592,16 @@ At DevPros Team, we are committed to:
 
 ### 🎯 Phase 1: MVP Foundation (Q4 2025)
 - [x] Basic limit order interface
-- [x] Wallet integration (Sui Wallet, Suiet)
+- [x] Wallet integration (Sui Wallet, Suiet, Slush Wallet)
 - [x] DeepBook order book display
 - [x] Batch cancel operations
 - [x] Responsive design
+- [x] **Multi-pair trading support (SUI/DBUSDC, WAL/SUI, DEEP/SUI)**
+- [x] **Trading sidebar with pair tabs**
+- [x] **Real-time SUI price feed (CoinGecko)**
+- [x] **Trading parameter validation**
+- [x] **Dynamic UI based on selected pair**
+- [x] **Wallet connection persistence**
 
 ### 🌟 Phase 2: Enhanced Features (Q1 2026)
 - [ ] Advanced charting and analytics

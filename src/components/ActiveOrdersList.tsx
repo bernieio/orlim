@@ -14,8 +14,21 @@ export function ActiveOrdersList() {
   const handleCancel = async (orderId: string) => {
     setLoading(orderId);
     try {
-      await cancelOrder(orderId);
-      refetch();
+      const result = await cancelOrder(orderId);
+      console.log('Order cancelled successfully:', result);
+      
+      // Remove from selected if it was selected
+      if (selected.has(orderId)) {
+        const newSelected = new Set(selected);
+        newSelected.delete(orderId);
+        setSelected(newSelected);
+      }
+      
+      // Refetch immediately, then again after delay to ensure data is updated
+      await refetch();
+      setTimeout(async () => {
+        await refetch();
+      }, 1500);
     } catch (err) {
       console.error(err);
       alert('Failed to cancel order: ' + (err as Error).message);
@@ -29,9 +42,17 @@ export function ActiveOrdersList() {
     
     setLoading('batch');
     try {
-      await batchCancelOrders(Array.from(selected));
+      const result = await batchCancelOrders(Array.from(selected));
+      console.log('Orders cancelled successfully:', result);
+      
+      // Clear selected orders
       setSelected(new Set());
-      refetch();
+      
+      // Refetch immediately, then again after delay to ensure data is updated
+      await refetch();
+      setTimeout(async () => {
+        await refetch();
+      }, 1500);
     } catch (err) {
       console.error(err);
       alert('Failed to cancel orders: ' + (err as Error).message);
@@ -86,7 +107,9 @@ export function ActiveOrdersList() {
       </Card.Header>
       <Card.Body>
         {activeOrders.length === 0 ? (
-          <p className="text-muted">No active orders</p>
+          <p className="text-muted mb-0 text-center">
+            <small>Place your first order to see it here</small>
+          </p>
         ) : (
           <Table striped bordered hover responsive>
             <thead>

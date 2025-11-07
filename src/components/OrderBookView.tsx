@@ -1,11 +1,16 @@
 import { Card, Table, Badge, Spinner } from 'react-bootstrap';
 import { useDeepBook } from '../hooks/useDeepBook';
-import { CONTRACTS } from '../constants/contracts';
+import { useSuiPrice } from '../hooks/useSuiPrice';
+import { useTradingPairs } from '../hooks/useTradingPairs';
+import { formatTokenAmount } from '../utils/tradingValidation';
 
 export function OrderBookView() {
-  // Use default pool (SUI_DBUSDC)
-  const poolId = CONTRACTS.DEEPBOOK.POOLS[CONTRACTS.DEEPBOOK.DEFAULT_POOL as keyof typeof CONTRACTS.DEEPBOOK.POOLS];
-  const { orderBook, loading, error } = useDeepBook(poolId);
+  const { selectedPair } = useTradingPairs();
+  const { orderBook, loading, error } = useDeepBook(selectedPair.pool_id);
+  const { price: marketPrice, loading: priceLoading } = useSuiPrice();
+  
+  const pairLabel = `${selectedPair.base_asset.symbol}/${selectedPair.quote_asset.symbol}`;
+  const showMarketPrice = selectedPair.quote_asset.symbol === 'SUI';
 
   if (loading) {
     return (
@@ -41,40 +46,54 @@ export function OrderBookView() {
   return (
     <Card>
       <Card.Header>
-        <strong>Order Book - SUI/DBUSDC</strong>
-        <Badge bg="info" className="ms-2">
-          Mid: ${orderBook.midPrice.toFixed(4)}
-        </Badge>
+        <strong>Order Book - {pairLabel}</strong>
+        {showMarketPrice && (
+          <>
+            <Badge bg="secondary" className="ms-2">
+              Market: {priceLoading ? (
+                <>
+                  <Spinner size="sm" className="me-1" />
+                  ...
+                </>
+              ) : (
+                `$${marketPrice.toFixed(4)}`
+              )}
+            </Badge>
+            {!priceLoading && (
+              <small className="text-muted ms-2">
+                (live)
+              </small>
+            )}
+          </>
+        )}
       </Card.Header>
       <Card.Body className="p-0">
         <div className="row g-0">
-          {/* Asks (Sell orders) */}
+          {/* Asks */}
           <div className="col-6 border-end">
             <div className="p-2 bg-danger bg-opacity-10">
-              <strong className="text-danger">Asks (Sell)</strong>
+              <strong className="text-danger">Asks</strong>
             </div>
-            <Table size="sm" className="mb-0">
+            <Table size="sm" className="mb-0" responsive="sm">
               <thead>
                 <tr>
                   <th>Price</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
+                  <th>Size</th>
                 </tr>
               </thead>
               <tbody>
                 {orderBook.asks.slice(0, 10).map((level, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} title={`Total: ${formatTokenAmount(level.price * level.quantity, selectedPair.quote_asset.decimals)} ${selectedPair.quote_asset.symbol}`}>
                     <td className="text-danger">
-                      {level.price.toFixed(6)}
+                      {formatTokenAmount(level.price, selectedPair.quote_asset.decimals, 6)}
                     </td>
-                    <td>{level.quantity.toFixed(2)}</td>
-                    <td>{(level.price * level.quantity).toFixed(2)}</td>
+                    <td>{formatTokenAmount(level.quantity, selectedPair.base_asset.decimals, 2)}</td>
                   </tr>
                 ))}
                 {orderBook.asks.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center text-muted">
-                      No asks available
+                    <td colSpan={2} className="text-center text-muted">
+                      No asks
                     </td>
                   </tr>
                 )}
@@ -82,33 +101,31 @@ export function OrderBookView() {
             </Table>
           </div>
 
-          {/* Bids (Buy orders) */}
+          {/* Bids */}
           <div className="col-6">
             <div className="p-2 bg-success bg-opacity-10">
-              <strong className="text-success">Bids (Buy)</strong>
+              <strong className="text-success">Bids</strong>
             </div>
-            <Table size="sm" className="mb-0">
+            <Table size="sm" className="mb-0" responsive="sm">
               <thead>
                 <tr>
                   <th>Price</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
+                  <th>Size</th>
                 </tr>
               </thead>
               <tbody>
                 {orderBook.bids.slice(0, 10).map((level, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} title={`Total: ${formatTokenAmount(level.price * level.quantity, selectedPair.quote_asset.decimals)} ${selectedPair.quote_asset.symbol}`}>
                     <td className="text-success">
-                      {level.price.toFixed(6)}
+                      {formatTokenAmount(level.price, selectedPair.quote_asset.decimals, 6)}
                     </td>
-                    <td>{level.quantity.toFixed(2)}</td>
-                    <td>{(level.price * level.quantity).toFixed(2)}</td>
+                    <td>{formatTokenAmount(level.quantity, selectedPair.base_asset.decimals, 2)}</td>
                   </tr>
                 ))}
                 {orderBook.bids.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center text-muted">
-                      No bids available
+                    <td colSpan={2} className="text-center text-muted">
+                      No bids
                     </td>
                   </tr>
                 )}

@@ -63,3 +63,31 @@ export interface OrderBookData {
   midPrice: number;
 }
 
+// Trading Pair types
+export interface AssetInfo {
+  id: string;
+  decimals: number;
+  symbol: string;
+  name: string;
+}
+
+export interface TradingParams {
+  min_size: number;
+  lot_size: number;
+  tick_size: number;
+}
+
+export interface TradingPair {
+  pool_id: string;
+  pool_name: string;
+  base_asset: AssetInfo;
+  quote_asset: AssetInfo;
+  trading_params: TradingParams;
+}
+
+export type PairTab = {
+  id: string;
+  pair: TradingPair;
+  isPinned: boolean;
+};
+
