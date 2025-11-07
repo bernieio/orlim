@@ -1,101 +1,123 @@
-import { DeepBookClient } from '@mysten/deepbook-v3';
-import type { SuiClient } from '@mysten/sui/client';
 import type { OrderBookData, OrderBookLevel } from '../types/orlim';
+import { CONTRACTS } from '../constants/contracts';
+
+// Response type from DeepBook Indexer API
+interface IndexerOrderBookResponse {
+  bids?: Array<{
+    price: string | number;
+    quantity: string | number;
+    orders?: number;
+  }>;
+  asks?: Array<{
+    price: string | number;
+    quantity: string | number;
+    orders?: number;
+  }>;
+  mid_price?: number;
+  best_bid?: number;
+  best_ask?: number;
+}
 
 export class DeepBookService {
-  private dbClient: DeepBookClient;
+  private indexerApi: string;
 
-  constructor(suiClient: SuiClient, userAddress: string, env: 'testnet' | 'mainnet' | 'devnet') {
-    // DeepBook SDK only supports 'testnet' or 'mainnet'
-    // Map 'devnet' to 'testnet' for DeepBook compatibility
-    const deepbookEnv = env === 'devnet' ? 'testnet' : env;
-    
-    this.dbClient = new DeepBookClient({
-      client: suiClient,
-      address: userAddress,
-      env: deepbookEnv as 'testnet' | 'mainnet',
-    });
+  constructor(_suiClient: any, _userAddress: string, env: 'testnet' | 'mainnet' | 'devnet') {
+    // Use DeepBook Indexer API instead of SDK
+    // Indexer provides reliable data that's always up-to-date
+    const indexerEnv = env === 'devnet' ? 'testnet' : env;
+    this.indexerApi = indexerEnv === 'testnet' 
+      ? CONTRACTS.DEEPBOOK.INDEXER_API
+      : 'https://deepbook-indexer.mainnet.mystenlabs.com';
   }
 
   /**
-   * Get Order Book (Level 2 data)
-   * Returns bids and asks with price levels
+   * Get Order Book from DeepBook Indexer API
+   * Uses REST API instead of SDK to avoid "Pool not found" errors
    */
-  async getOrderBook(
-    poolKey: string,
-    priceLow: number,
-    priceHigh: number,
-    isBid: boolean
-  ): Promise<OrderBookLevel[]> {
+  async getOrderBookFromIndexer(poolId: string): Promise<IndexerOrderBookResponse> {
     try {
-      const result = await this.dbClient.getLevel2Range(
-        poolKey,
-        priceLow,
-        priceHigh,
-        isBid
-      );
-      // Handle different return types from DeepBook SDK
-      if (result && typeof result === 'object' && 'prices' in result && 'quantities' in result) {
-        // If returned as arrays of prices and quantities
-        const prices = (result as { prices: number[]; quantities: number[] }).prices || [];
-        const quantities = (result as { prices: number[]; quantities: number[] }).quantities || [];
-        return prices.map((price: number, idx: number) => ({
-          price,
-          quantity: quantities[idx] || 0,
-          orders: 1, // Default to 1 order per level
-        }));
-      } else if (Array.isArray(result)) {
-        // If returned as array of level objects
-        return (result as any[]).map((level: any) => ({
-          price: level.price || level.price_level || 0,
-          quantity: level.quantity || level.size || 0,
-          orders: level.open_quantity || level.orders || 1,
-        }));
+      const url = `${this.indexerApi}/get_orderbook?pool_id=${poolId}`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Pool not found: ${poolId}. Please check if the pool exists on the indexer.`);
+        }
+        throw new Error(`Indexer API error: ${response.status} ${response.statusText}`);
       }
-      return [];
-    } catch (error) {
-      console.error('Error fetching order book:', error);
-      return [];
+
+      const data: IndexerOrderBookResponse = await response.json();
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching order book from indexer:', error);
+      throw error;
     }
   }
 
   /**
-   * Get Full Order Book (Bids + Asks)
+   * Convert indexer response to OrderBookLevel format
    */
-  async getFullOrderBook(poolKey: string): Promise<OrderBookData> {
-    try {
-      // Try to get actual market data with a wider range
-      // Default to a reasonable range based on typical prices
-      const defaultMidPrice = 2.0;
-      const range = defaultMidPrice * 0.2; // ±20% range for better coverage
-      
-      const [bids, asks] = await Promise.all([
-        this.getOrderBook(poolKey, Math.max(0, defaultMidPrice - range), defaultMidPrice, true),
-        this.getOrderBook(poolKey, defaultMidPrice, defaultMidPrice + range, false),
-      ]);
+  private convertToOrderBookLevels(
+    levels: Array<{ price: string | number; quantity: string | number; orders?: number }> | undefined
+  ): OrderBookLevel[] {
+    if (!levels || !Array.isArray(levels)) {
+      return [];
+    }
 
-      // Calculate actual mid price from best bid and ask if available
-      let midPrice = defaultMidPrice;
-      if (bids.length > 0 && asks.length > 0) {
-        const bestBid = bids[bids.length - 1]?.price || 0; // Highest bid (last after reverse)
-        const bestAsk = asks[0]?.price || 0; // Lowest ask (first)
+    return levels.map((level) => ({
+      price: typeof level.price === 'string' ? parseFloat(level.price) : level.price,
+      quantity: typeof level.quantity === 'string' ? parseFloat(level.quantity) : level.quantity,
+      orders: level.orders || 1,
+    }));
+  }
+
+  /**
+   * Get Full Order Book (Bids + Asks) from DeepBook Indexer
+   * This method uses the indexer REST API instead of SDK to avoid "Pool not found" errors
+   */
+  async getFullOrderBook(poolId: string): Promise<OrderBookData> {
+    try {
+      // Fetch order book from indexer API
+      const indexerData = await this.getOrderBookFromIndexer(poolId);
+
+      // Convert indexer response to our format
+      const bids = this.convertToOrderBookLevels(indexerData.bids);
+      const asks = this.convertToOrderBookLevels(indexerData.asks);
+
+      // Sort bids: highest first, asks: lowest first
+      bids.sort((a, b) => b.price - a.price);
+      asks.sort((a, b) => a.price - b.price);
+
+      // Calculate mid price
+      let midPrice = indexerData.mid_price || 2.0;
+      
+      // If mid_price not provided, calculate from best bid/ask
+      if (!indexerData.mid_price) {
+        const bestBid = indexerData.best_bid || (bids.length > 0 ? bids[0].price : 0);
+        const bestAsk = indexerData.best_ask || (asks.length > 0 ? asks[0].price : 0);
+        
         if (bestBid > 0 && bestAsk > 0) {
           midPrice = (bestBid + bestAsk) / 2;
+        } else if (bestBid > 0) {
+          midPrice = bestBid;
+        } else if (bestAsk > 0) {
+          midPrice = bestAsk;
         }
-      } else if (bids.length > 0) {
-        midPrice = bids[bids.length - 1]?.price || defaultMidPrice;
-      } else if (asks.length > 0) {
-        midPrice = asks[0]?.price || defaultMidPrice;
       }
 
       return {
-        bids: bids.reverse(), // Highest bid first
-        asks, // Lowest ask first
+        bids,
+        asks,
         midPrice,
       };
-    } catch (error) {
-      console.error('Error fetching full order book:', error);
-      // Return empty order book on error
+    } catch (error: any) {
+      console.error('Error fetching full order book from indexer:', error);
+      
+      // Return empty order book on error (don't throw to avoid breaking UI)
       return {
         bids: [],
         asks: [],
@@ -107,32 +129,24 @@ export class DeepBookService {
   /**
    * Get User's Orders from DeepBook
    * (This queries on-chain orders, not Orlim receipts)
+   * Note: Indexer API may not support user-specific queries
+   * Use Orlim OrderManager to track user orders instead
    */
-  async getUserOrders(_poolKey: string): Promise<any[]> {
-    // Note: DeepBook V3 SDK doesn't expose direct user order query yet
-    // You'll need to track via Orlim OrderManager instead
-    // This is a placeholder for future SDK updates
+  async getUserOrders(_poolId: string): Promise<any[]> {
+    // Indexer API doesn't provide user-specific order queries
+    // Track orders via Orlim OrderManager instead
     return [];
   }
 
   /**
    * Check Balance Manager balance
-   * (If using DeepBook's balance manager for collateral)
+   * Note: This method is not available via indexer API
+   * Use SuiClient directly if needed for on-chain balance checks
    */
-  async checkManagerBalance(managerKey: string, coinType: string): Promise<number> {
-    try {
-      const balance = await this.dbClient.checkManagerBalance(managerKey, coinType);
-      // Handle different return types
-      if (typeof balance === 'number') {
-        return balance;
-      } else if (balance && typeof balance === 'object' && 'balance' in balance) {
-        return (balance as { balance: number }).balance;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Error checking manager balance:', error);
-      return 0;
-    }
+  async checkManagerBalance(_managerKey: string, _coinType: string): Promise<number> {
+    // Indexer API doesn't provide balance manager queries
+    // Use SuiClient.getObject() or similar for on-chain balance checks
+    return 0;
   }
 }
 
