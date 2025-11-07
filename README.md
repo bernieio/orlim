@@ -544,7 +544,7 @@ At DevPros Team, we are committed to:
 ## 🔗 Related Projects
 
 - **📦 Smart Contract**: [orlim-contract](https://github.com/bernieio/orlim-contract)
-- **🌐 Live Demo**: [orlim.dev](https://orlim.netlify.app/)
+- **🌐 Live Demo**: [orlim.netlify.app](https://orlim.netlify.app/)
 <!-- - **📚 Documentation**: [Orlim Documentation](https://docs.orlim.dev) -->
 <!-- - **📊 Analytics**: [Orlim Analytics](https://analytics.orlim.dev) -->
 
