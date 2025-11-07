@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 
-// CoinGecko Public API (no API key required)
-const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd';
+// Netlify Function endpoint (proxies CoinGecko API)
+const COINGECKO_FUNCTION_URL = '/.netlify/functions/coingecko';
 const DEFAULT_SUI_PRICE = parseFloat(import.meta.env.VITE_DEFAULT_SUI_PRICE || '2.0');
+
+// Response type from Netlify Function
+interface PriceResponse {
+  price: number;
+  timestamp: number;
+  error?: string;
+}
 
 export function useSuiPrice() {
   const [price, setPrice] = useState<number>(DEFAULT_SUI_PRICE); // Fallback from env or $2
@@ -23,7 +30,7 @@ export function useSuiPrice() {
           isFirstFetchRef.current = false;
         }
 
-        const response = await fetch(COINGECKO_API, {
+        const response = await fetch(COINGECKO_FUNCTION_URL, {
           headers: {
             'Accept': 'application/json',
           },
@@ -37,8 +44,14 @@ export function useSuiPrice() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        const suiPrice = data.sui?.usd;
+        const data: PriceResponse = await response.json();
+        
+        // Check if there's an error in the response
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        const suiPrice = data.price;
         
         if (suiPrice && suiPrice > 0) {
           setPrice(suiPrice);
@@ -68,7 +81,7 @@ export function useSuiPrice() {
     fetchPrice(true);
 
     // Poll mỗi 20 giây để cập nhật giá
-    // CoinGecko public API: 10-50 calls/phút (rate limit)
+    // Netlify Function caches response for 20 seconds
     // 20 giây = 3 calls/phút → an toàn với rate limit
     const POLL_INTERVAL = 20000; // 20 seconds
 
