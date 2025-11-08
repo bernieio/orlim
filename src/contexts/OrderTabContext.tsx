@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-type OrderTab = 'standard' | 'oco' | 'tif';
+export type OrderTab = 'standard' | 'oco' | 'tif';
 
 interface OrderTabContextType {
   activeTab: OrderTab;

@@ -5,7 +5,7 @@ import { contractService } from '../services/contractService';
 import { useOrderManager } from '../hooks/useOrderManager';
 import { useSuiPrice } from '../hooks/useSuiPrice';
 import { useTradingPairs } from '../hooks/useTradingPairs';
-import { useOrderTab } from '../contexts/OrderTabContext';
+import { useOrderTab, type OrderTab } from '../contexts/OrderTabContext';
 import { CreateOrderManager } from './CreateOrderManager';
 import { validateOrderParams, formatTokenAmount, fromRawValue } from '../utils/tradingValidation';
 
