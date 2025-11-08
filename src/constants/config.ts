@@ -1,6 +1,6 @@
 // Network configuration
 export const NETWORK_CONFIG = {
-  defaultNetwork: 'testnet' as const,
+  defaultNetwork: 'mainnet' as const,
   networks: {
     testnet: {
       name: 'testnet',

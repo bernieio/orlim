@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 
-// Netlify Function endpoint (proxies CoinGecko API)
+// CoinGecko Public API (Free tier - no API key required)
+// Rate limit: 10-50 calls/minute (we use 3 calls/minute = safe)
+const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd';
+// Netlify Function endpoint (fallback if direct API fails)
 const COINGECKO_FUNCTION_URL = '/.netlify/functions/coingecko';
 const DEFAULT_SUI_PRICE = parseFloat(import.meta.env.VITE_DEFAULT_SUI_PRICE || '2.0');
+
+// Response type from CoinGecko API
+interface CoinGeckoResponse {
+  sui?: {
+    usd: number;
+  };
+}
 
 // Response type from Netlify Function
 interface PriceResponse {
@@ -30,28 +40,46 @@ export function useSuiPrice() {
           isFirstFetchRef.current = false;
         }
 
-        const response = await fetch(COINGECKO_FUNCTION_URL, {
+        let suiPrice: number | null = null;
+
+        // Try direct CoinGecko API first (public, free)
+        try {
+          const response = await fetch(COINGECKO_API_URL, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'Orlim-LimitOrderManager/1.0',
+            },
+          });
+
+          if (response.ok) {
+            const data: CoinGeckoResponse = await response.json();
+            suiPrice = data.sui?.usd || null;
+          } else if (response.status === 429) {
+            // Rate limit - try Netlify function as fallback
+            throw new Error('Rate limit - using fallback');
+          }
+        } catch (directApiError) {
+          // Fallback to Netlify function if direct API fails
+          try {
+            const functionResponse = await fetch(COINGECKO_FUNCTION_URL, {
           headers: {
             'Accept': 'application/json',
           },
         });
 
-        if (!response.ok) {
-          // Handle rate limit (429) or other errors
-          if (response.status === 429) {
-            throw new Error('Rate limit exceeded. Please wait...');
+            if (functionResponse.ok) {
+              const data: PriceResponse = await functionResponse.json();
+              if (data.error) {
+                throw new Error(data.error);
+              }
+              suiPrice = data.price;
+            } else {
+              throw new Error(`HTTP error! status: ${functionResponse.status}`);
+        }
+          } catch (functionError) {
+            throw directApiError; // Re-throw original error
           }
-          throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const data: PriceResponse = await response.json();
-        
-        // Check if there's an error in the response
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        
-        const suiPrice = data.price;
         
         if (suiPrice && suiPrice > 0) {
           setPrice(suiPrice);
@@ -59,7 +87,7 @@ export function useSuiPrice() {
           setLastUpdate(new Date());
           retryCountRef.current = 0; // Reset retry count on success
         } else {
-          throw new Error('Invalid price data');
+          throw new Error('Invalid price data from CoinGecko');
         }
       } catch (err: any) {
         console.error('Failed to fetch SUI price:', err);

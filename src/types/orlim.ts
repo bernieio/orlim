@@ -1,14 +1,48 @@
 // TypeScript types for Orlim contract and frontend
 
+// OrderReceiptData from contract (stored in OrderReceipt object)
 export interface OrderReceiptData {
   order_id: string;
-  pool_id: string;
+  deepbook_order_id: string;
+  pool_id: string; // vector<u8> as hex string
   price: string;
   quantity: string;
+  original_quantity: string;
   is_bid: boolean;
+  order_type: OrderType;
+  time_in_force: TimeInForce;
   created_at: string;
   is_active: boolean;
-  cancelled_at?: string;
+  is_fully_filled: boolean;
+  cancelled_at?: string | null;
+  oco_group_id?: string | null;
+  expires_at?: string | null;
+}
+
+// OrderReceipt object (Owned Object)
+export interface OrderReceipt {
+  objectId: string;
+  data: OrderReceiptData;
+  owner: string;
+  version: string;
+}
+
+// OrderType enum
+export type OrderType = {
+  value: number; // 0 = STANDARD, 1 = OCO, 2 = TIF
+};
+
+// TimeInForce enum
+export type TimeInForce = {
+  value: number; // 0 = GTC, 1 = IOC, 2 = FOK
+};
+
+// OCO Group
+export interface OCOGroup {
+  group_id: string;
+  order1_id: string;
+  order2_id: string;
+  is_active: boolean;
 }
 
 export interface OrderManager {
@@ -25,6 +59,24 @@ export interface PlaceOrderParams {
   price: number;
   quantity: number;
   is_bid: boolean;
+}
+
+// OCO Order params
+export interface PlaceOCOOrderParams {
+  pool_id: string;
+  take_profit_price: number;
+  stop_loss_price: number;
+  quantity: number;
+  is_bid: boolean;
+}
+
+// TIF Order params
+export interface PlaceTIFOrderParams {
+  pool_id: string;
+  price: number;
+  quantity: number;
+  is_bid: boolean;
+  tif_type: 'IOC' | 'FOK'; // Immediate-or-Cancel or Fill-or-Kill
 }
 
 export interface CancelOrderParams {

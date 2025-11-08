@@ -1,6 +1,6 @@
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { contractService } from '../services/contractService';
-import type { PlaceOrderParams } from '../types/orlim';
+import type { PlaceOrderParams, PlaceOCOOrderParams, PlaceTIFOrderParams } from '../types/orlim';
 
 const CLOCK_OBJECT_ID = '0x6'; // Sui Clock object
 
@@ -19,6 +19,54 @@ export function useOrlimContract(orderManagerId: string) {
       price: params.price,
       quantity: params.quantity,
       isBid: params.is_bid,
+      clockObjectId: CLOCK_OBJECT_ID,
+    });
+
+    const result = await signAndExecute({
+      transaction: tx,
+    });
+    return result;
+  };
+
+  // Place OCO Order
+  const placeOCOOrder = async (params: PlaceOCOOrderParams) => {
+    if (!orderManagerId) {
+      throw new Error('Order Manager not found. Please create one first.');
+    }
+
+    const tx = contractService.placeOCOOrderTx({
+      orderManager: orderManagerId,
+      poolId: params.pool_id,
+      order1Price: params.take_profit_price,
+      order1Quantity: params.quantity,
+      order1IsBid: false, // Take Profit is sell
+      order2Price: params.stop_loss_price,
+      order2Quantity: params.quantity,
+      order2IsBid: false, // Stop Loss is sell
+      clockObjectId: CLOCK_OBJECT_ID,
+    });
+
+    const result = await signAndExecute({
+      transaction: tx,
+    });
+    return result;
+  };
+
+  // Place TIF Order
+  const placeTIFOrder = async (params: PlaceTIFOrderParams & { baseCoin: string; quoteCoin: string }) => {
+    if (!orderManagerId) {
+      throw new Error('Order Manager not found. Please create one first.');
+    }
+
+    const tx = contractService.placeTIFOrderTx({
+      orderManager: orderManagerId,
+      poolId: params.pool_id,
+      price: params.price,
+      quantity: params.quantity,
+      isBid: params.is_bid,
+      tifType: params.tif_type,
+      baseCoin: params.baseCoin,
+      quoteCoin: params.quoteCoin,
       clockObjectId: CLOCK_OBJECT_ID,
     });
 
@@ -83,9 +131,27 @@ export function useOrlimContract(orderManagerId: string) {
     return await signAndExecute({ transaction: tx });
   };
 
+  // Cancel Order by Receipt
+  const cancelOrderByReceipt = async (receiptId: string) => {
+    if (!orderManagerId) {
+      throw new Error('Order Manager not found.');
+    }
+
+    const tx = contractService.cancelOrderByReceiptTx({
+      orderManager: orderManagerId,
+      orderReceiptId: receiptId,
+      clockObjectId: CLOCK_OBJECT_ID,
+    });
+
+    return await signAndExecute({ transaction: tx });
+  };
+
   return {
     placeOrder,
+    placeOCOOrder,
+    placeTIFOrder,
     cancelOrder,
+    cancelOrderByReceipt,
     batchCancelOrders,
     modifyOrder,
   };

@@ -6,13 +6,17 @@ import { OrderForm } from './components/OrderForm';
 import { ActiveOrdersList } from './components/ActiveOrdersList';
 import { OrderBookView } from './components/OrderBookView';
 import { TradingPairsProvider } from './components/TradingPairsProvider';
+import { OrderTabProvider } from './contexts/OrderTabContext';
+import { EventNotifications } from './components/EventNotifications';
 
 function App() {
   const account = useCurrentAccount();
 
   return (
     <TradingPairsProvider>
+      <OrderTabProvider>
       <div className="min-vh-100 bg-light">
+        <EventNotifications />
         <WalletConnection />
         
         <Container className="py-4">
@@ -52,6 +56,7 @@ function App() {
           </Container>
         </footer>
       </div>
+      </OrderTabProvider>
     </TradingPairsProvider>
   );
 }
